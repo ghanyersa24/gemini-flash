@@ -8,9 +8,10 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 dotenv.config();
 const app = express();
 app.use(express.json());
+app.use(express.static('public'))
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "models/gemini-2.0-flash" });
+const model = genAI.getGenerativeModel({ model: "models/gemini-2.5-flash" });
 
 const upload = multer({ dest: "uploads/" });
 
@@ -86,4 +87,21 @@ app.post('/generate-from-audio', upload.single('audio'), async (req, res) => {
     } catch (error) {
         return res.status(500).json({ error: error.message })
     }
+})
+
+// api chat
+app.post('/api/chat', async (req, res) => {
+    const userMessage = req.body.message
+    if (!userMessage)
+        return res.status(400).json({ reply: 'Message ris equired' })
+
+    try {
+        const result = await model.generateContent(userMessage)
+        const response = await result.response
+        return res.json({ reply: response.text() })
+    } catch (error) {
+        console.error(error)
+        return res.status(500).json({ error: error.message })
+    }
+
 })
